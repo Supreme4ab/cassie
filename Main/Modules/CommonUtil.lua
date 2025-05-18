@@ -1,3 +1,4 @@
+-- Cassie Hub | Common Utility Module
 -- File: Main/Modules/CommonUtil.lua
 
 local Services = setmetatable({}, {
@@ -12,6 +13,10 @@ local CommonUtil = {}
 
 function CommonUtil.GetService(name)
     return Services[name]
+end
+
+function CommonUtil.WaitForService(name, timeout)
+    return game:WaitForChild(name, timeout or 5)
 end
 
 function CommonUtil.GetLocalPlayer()
