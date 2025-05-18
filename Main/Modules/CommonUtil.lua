@@ -1,4 +1,5 @@
-local Services = setmetatable({}, {
+local Services = {}
+setmetatable(Services, {
     __index = function(_, serviceName)
         local service = game:GetService(serviceName)
         rawset(Services, serviceName, service)
