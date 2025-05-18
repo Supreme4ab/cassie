@@ -1,3 +1,5 @@
+-- Cassie Hub | AUT | Level Farming (Final Fixed + Status Cleanup)
+
 --<< SERVICES & MODULES >>--
 local HttpService = game:GetService("HttpService")
 
@@ -22,8 +24,6 @@ local CONFIG = {
 local function saveShardConfig(value)
     if writefile then
         writefile(CONFIG.CONFIG_PATH, HttpService:JSONEncode({Shards = value}))
-    else
-        warn("[CassieHub] Executor does not support saving shard config.")
     end
 end
 
@@ -61,23 +61,17 @@ local currentLevelLabel = MainTab:Paragraph({
     Color = "Grey"
 })
 
-local statusParagraph = nil
+-- Store the status element reference directly
+local statusElement = nil
 local lastStatusMode = nil
-
---<< STATUS LOGIC >>--
-local function clearAllStatusParagraphs()
-    for _, element in pairs(MainTab.Elements or {}) do
-        if element.Title and element.Title == "Status" and typeof(element.Destroy) == "function" then
-            element:Destroy()
-        end
-    end
-end
 
 local function updateStatus(mode)
     if lastStatusMode == mode then return end
     lastStatusMode = mode
 
-    clearAllStatusParagraphs()
+    if statusElement and typeof(statusElement.Destroy) == "function" then
+        statusElement:Destroy()
+    end
 
     local desc, color = "🔴 Disabled", "Red"
     if mode == "farming" then
@@ -86,7 +80,7 @@ local function updateStatus(mode)
         desc, color = "🟠 Idle (Max Level)", "Orange"
     end
 
-    statusParagraph = MainTab:Paragraph({
+    statusElement = MainTab:Paragraph({
         Title = "Status",
         Desc = desc,
         Color = color
