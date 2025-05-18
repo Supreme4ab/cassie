@@ -59,7 +59,7 @@ function AUTLevelUtil.RunFarmLoop()
                     :InvokeServer(1, "UShards", 10)
             end)
 
-            local sellTable = AUTLevelUtil.BuildSellTable()
+            local sellTable = AUTLevelUtil.BuildSellTable(nil, AUTLevelUtil.ShardsPerAbility or 5)
             if next(sellTable) then
                 pcall(function()
                     ReplicatedStorage.ReplicatedModules
