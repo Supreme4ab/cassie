@@ -11,19 +11,17 @@ local allowedAbilities = {
     "ABILITY_8881", "ABILITY_10019", "ABILITY_21", "ABILITY_10", "ABILITY_14"
 }
 
--- Safe level parser
+-- Uses AbilityLevel attribute
 function AUTLevelUtil.GetCurrentLevel()
-    local success, label = pcall(function()
+    local success, ability = pcall(function()
         return Services.Players.LocalPlayer
-            .PlayerGui:WaitForChild("UI")
-            .Gameplay:WaitForChild("Character")
-            .Info:WaitForChild("AbilityInfo")
+            :WaitForChild("Data")
+            :WaitForChild("Ability")
     end)
 
-    if not success or not label or not label.Text then return nil end
+    if not success or not ability then return nil end
 
-    local text = label.Text:match("LVL%s+(%d+)")
-    return tonumber(text)
+    return ability:GetAttribute("AbilityLevel")
 end
 
 -- Builds a shard sale data dict safely
