@@ -1,4 +1,4 @@
-local CommonUtil = require(script.Parent.CommonUtil)
+local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
 local ReplicatedStorage = CommonUtil.GetService("ReplicatedStorage")
 local Players = CommonUtil.GetService("Players")
 local LocalPlayer = CommonUtil.GetLocalPlayer()
