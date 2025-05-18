@@ -11,22 +11,30 @@ local allowedAbilities = {
     "ABILITY_8881", "ABILITY_10019", "ABILITY_21", "ABILITY_10", "ABILITY_14"
 }
 
--- Parses level number from text
+-- Safe level parser
 function AUTLevelUtil.GetCurrentLevel()
-    local label = Services.Players.LocalPlayer
-        .PlayerGui:WaitForChild("UI")
-        .Gameplay:WaitForChild("Character")
-        .Info:WaitForChild("AbilityInfo")
+    local success, label = pcall(function()
+        return Services.Players.LocalPlayer
+            .PlayerGui:WaitForChild("UI")
+            .Gameplay:WaitForChild("Character")
+            .Info:WaitForChild("AbilityInfo")
+    end)
+
+    if not success or not label or not label.Text then return nil end
 
     local text = label.Text:match("LVL%s+(%d+)")
     return tonumber(text)
 end
 
--- Builds a sell dictionary based on player UI
+-- Builds a shard sale data dict safely
 function AUTLevelUtil.BuildShardSellData()
-    local shardPanel = Services.Players.LocalPlayer
-        .PlayerGui.UI.Menus["Black Market"]
-        .Frame.ShardConvert.Shards
+    local success, shardPanel = pcall(function()
+        return Services.Players.LocalPlayer
+            .PlayerGui.UI.Menus["Black Market"]
+            .Frame.ShardConvert.Shards
+    end)
+
+    if not success or not shardPanel then return nil end
 
     local data = {}
     for _, ability in ipairs(allowedAbilities) do
@@ -60,7 +68,7 @@ function AUTLevelUtil.RunFarmLoop()
     end)
 end
 
--- Watcher for auto-stopping at level 200 and resuming on ascension
+-- Watcher for level-based automation
 function AUTLevelUtil.RunLevelWatcher(onAscend, onMaxLevel)
     task.spawn(function()
         local wasMax = false
