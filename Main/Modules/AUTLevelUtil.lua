@@ -1,3 +1,6 @@
+-- Cassie Hub | AUT Level Utility Module (Fixed)
+-- File: Main/Modules/AUTLevelUtil.lua
+
 local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
 
 local Players = CommonUtil.GetService("Players")
