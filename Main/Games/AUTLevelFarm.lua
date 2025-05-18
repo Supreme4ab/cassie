@@ -1,3 +1,6 @@
+-- Cassie Hub | AUT | Level Farming (Optimized + Auto Ascend + Stand Info)
+
+--<< SERVICES & MODULES >>--
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -6,15 +9,20 @@ local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Su
 local AUTLevelUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/AUTLevelUtil.lua"))()
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
+--<< CONFIGURATION >>--
 local CONFIG = {
     TITLE = "Cassie Hub | AUT | Level Farming",
     DEFAULT_KEY = "RightControl",
-    SHARD_LIMIT = { MIN = 1, MAX = 15, DEFAULT = 5 },
+    SHARD_LIMIT = {
+        MIN = 1,
+        MAX = 15,
+        DEFAULT = 5
+    },
     CONFIG_PATH = "CassieHub_AUTLevel.fileformat",
-    UPDATE_INTERVAL = 1,
-    MAX_LEVEL = 200
+    UPDATE_INTERVAL = 1
 }
 
+--<< LOAD / SAVE SHARD CONFIG >>--
 local function saveShardConfig(value)
     if writefile then
         writefile(CONFIG.CONFIG_PATH, HttpService:JSONEncode({Shards = value}))
@@ -33,31 +41,7 @@ local function loadShardConfig()
     return CONFIG.SHARD_LIMIT.DEFAULT
 end
 
-local function ascendAbility()
-    local AscendRemote = ReplicatedStorage:WaitForChild("ReplicatedModules"):WaitForChild("KnitPackage"):WaitForChild("Knit")
-        :WaitForChild("Services"):WaitForChild("LevelService"):WaitForChild("RF"):WaitForChild("AscendAbility")
-    AscendRemote:InvokeServer(1800)
-end
-
-local function getAbility()
-    return Players.LocalPlayer:FindFirstChild("Data") and Players.LocalPlayer.Data:FindFirstChild("Ability")
-end
-
-function AUTLevelUtil.GetCurrentLevel()
-    local ability = getAbility()
-    return ability and ability:GetAttribute("AbilityLevel") or nil
-end
-
-function AUTLevelUtil.GetAbilityName()
-    local ability = getAbility()
-    return ability and ability:GetAttribute("AbilityName") or "Unknown"
-end
-
-function AUTLevelUtil.GetAscensionRank()
-    local ability = getAbility()
-    return ability and ability:GetAttribute("AscensionRank") or 0
-end
-
+--<< UI SETUP >>--
 local Window = WindUI:CreateWindow({
     Title = CONFIG.TITLE,
     Icon = "zap",
@@ -73,14 +57,14 @@ local MainTab = Window:Tab({ Title = "Main", Icon = "zap" })
 local MiscTab = Window:Tab({ Title = "Misc", Icon = "info" })
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
 
-local levelSection = MainTab:Section({ Title = "Auto-Level" })
-
+--<< UI ELEMENTS >>--
 local currentLevelLabel = MainTab:Paragraph({
     Title = "Current Level",
     Desc = "Waiting...",
     Color = "Grey"
 })
 
+-- STATUS PARAGRAPH CLEAN HANDLING
 local statusElement = nil
 local lastStatusMode = nil
 
@@ -106,6 +90,7 @@ local function updateStatus(mode)
     })
 end
 
+-- DIALOG
 local function showDialog(title, content)
     Window:Dialog({
         Title = title,
@@ -116,6 +101,34 @@ local function showDialog(title, content)
     })
 end
 
+-- UTIL FOR ATTRIBUTE ACCESS
+local function getAbility()
+    return Players.LocalPlayer:FindFirstChild("Data") and Players.LocalPlayer.Data:FindFirstChild("Ability")
+end
+
+function AUTLevelUtil.GetCurrentLevel()
+    local ability = getAbility()
+    return ability and ability:GetAttribute("AbilityLevel") or nil
+end
+
+function AUTLevelUtil.GetAbilityName()
+    local ability = getAbility()
+    return ability and ability:GetAttribute("AbilityName") or "Unknown"
+end
+
+function AUTLevelUtil.GetAscensionRank()
+    local ability = getAbility()
+    return ability and ability:GetAttribute("AscensionRank") or 0
+end
+
+-- ASCEND REMOTE
+local function ascendAbility()
+    local AscendRemote = ReplicatedStorage:WaitForChild("ReplicatedModules"):WaitForChild("KnitPackage"):WaitForChild("Knit")
+        :WaitForChild("Services"):WaitForChild("LevelService"):WaitForChild("RF"):WaitForChild("AscendAbility")
+    AscendRemote:InvokeServer(1800)
+end
+
+-- FARM CONTROL
 local function startFarming()
     AUTLevelUtil.Reset()
     AUTLevelUtil.IsMonitoring = true
@@ -123,19 +136,25 @@ local function startFarming()
 
     updateStatus("farming")
     AUTLevelUtil.RunFarmLoop()
+
     AUTLevelUtil.RunLevelWatcher(
         function()
+            showDialog("Ascension Detected", "Player ascended — resuming farm!")
             updateStatus("farming")
         end,
         function()
+            showDialog("Max Level", "Player reached level 200 — farming paused.")
             updateStatus("idle")
         end
     )
 end
 
+-- LEVEL MONITORING (AUTOMATIC)
 task.spawn(function()
+    local ability = getAbility()
+    if not ability then return end
     while true do
-        local level = AUTLevelUtil.GetCurrentLevel()
+        local level = ability:GetAttribute("AbilityLevel")
         if level then
             currentLevelLabel:SetDesc("Level: " .. tostring(level))
         else
@@ -145,9 +164,10 @@ task.spawn(function()
     end
 end)
 
+-- SHARD SLIDER
 local loadedShardValue = loadShardConfig()
 MainTab:Slider({
-    Title = "Level-Up Rate",
+    Title = "Shards Per Ability",
     Step = 1,
     Value = {
         Min = CONFIG.SHARD_LIMIT.MIN,
@@ -161,14 +181,12 @@ MainTab:Slider({
 })
 AUTLevelUtil.ShardsPerAbility = loadedShardValue
 
-local autofarmEnabled = false
-
+-- TOGGLE: FARM
 MainTab:Toggle({
-    Title = "Level Auto-farm",
-    Desc = "Auto-Farm your XP and easily level up!",
+    Title = "Level Autofarm",
+    Desc = "Automatically farm and sell trait shards for XP",
     Default = false,
     Callback = function(enabled)
-        autofarmEnabled = enabled
         if enabled then
             startFarming()
         else
@@ -178,18 +196,19 @@ MainTab:Toggle({
     end
 })
 
-MiscTab:Section({ Title = "Stand Info" })
+-- MISC TAB: STAND INFO
+local standSection = MiscTab:Section({ Title = "Stand Info" })
 
 local standNamePara = MiscTab:Paragraph({
     Title = "Stand",
     Desc = "Loading...",
-    Color = "Grey"
+    Color = "White"
 })
 
 local ascensionPara = MiscTab:Paragraph({
     Title = "Ascensions",
     Desc = "Loading...",
-    Color = "Grey"
+    Color = "White"
 })
 
 task.spawn(function()
@@ -200,6 +219,7 @@ task.spawn(function()
     end
 end)
 
+-- AUTO ASCEND TOGGLE
 local autoAscendRunning = false
 MiscTab:Toggle({
     Title = "Auto Ascend",
@@ -208,20 +228,11 @@ MiscTab:Toggle({
     Callback = function(enabled)
         autoAscendRunning = enabled
         task.spawn(function()
-            local lastAscension = AUTLevelUtil.GetAscensionRank()
             while autoAscendRunning do
                 local level = AUTLevelUtil.GetCurrentLevel()
-                if level and level >= CONFIG.MAX_LEVEL then
+                if level and level >= 200 then
                     ascendAbility()
-                end
-
-                local currentAsc = AUTLevelUtil.GetAscensionRank()
-                if currentAsc > lastAscension then
-                    lastAscension = currentAsc
-                    task.wait(0.5)
-                    if autofarmEnabled then
-                        startFarming()
-                    end
+                    autoAscendRunning = false
                     break
                 end
                 task.wait(1)
@@ -230,6 +241,7 @@ MiscTab:Toggle({
     end
 })
 
+-- SETTINGS
 local transparencyState = false
 SettingsTab:Button({
     Title = "Toggle Transparency",
@@ -264,5 +276,6 @@ SettingsTab:Keybind({
     end
 })
 
+-- INIT
 showDialog("Cassie Hub", "AUT Level Farm Ready!")
 Window:SelectTab(1)
