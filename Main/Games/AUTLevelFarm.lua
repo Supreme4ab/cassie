@@ -13,6 +13,8 @@ local CONFIG = {
     }
 }
 
+local Services = CommonUtil.Services
+
 -- Window
 local Window = WindUI:CreateWindow({
     Title = CONFIG.TITLE,
@@ -28,6 +30,46 @@ local Window = WindUI:CreateWindow({
 -- Tabs
 local MainTab = Window:Tab({ Title = "Main", Icon = "zap" })
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
+local MiscTab = Window:Tab({ Title = "Misc", Icon = "sparkles" })
+
+-- Misc Section (Stand Info)
+local standSection = MiscTab:Section({
+    Title = "Stand",
+    TextXAlignment = "Center"
+})
+
+local standNameParagraph = MiscTab:Paragraph({
+    Title = "Current Stand",
+    Desc = "Loading...",
+    Color = "Grey"
+})
+
+local ascensionParagraph = MiscTab:Paragraph({
+    Title = "Ascensions",
+    Desc = "Loading...",
+    Color = "Grey"
+})
+
+task.spawn(function()
+    local success, abilityValue = pcall(function()
+        return Services.Players.LocalPlayer:WaitForChild("Data"):WaitForChild("Ability")
+    end)
+
+    if success and abilityValue then
+        while true do
+            local name = abilityValue:GetAttribute("AbilityName") or "Unknown"
+            local rank = abilityValue:GetAttribute("AscensionRank") or 0
+
+            standNameParagraph:SetDesc(name)
+            ascensionParagraph:SetDesc(tostring(rank) .. " Ascensions")
+
+            task.wait(1)
+        end
+    else
+        standNameParagraph:SetDesc("Unavailable")
+        ascensionParagraph:SetDesc("N/A")
+    end
+end)
 
 -- Paragraphs
 local currentLevelLabel = MainTab:Paragraph({
@@ -38,7 +80,7 @@ local currentLevelLabel = MainTab:Paragraph({
 
 local statusParagraph
 
--- Rebuild status paragraph to force color and text updates
+-- Rebuild status paragraph
 local function updateStatus(mode)
     if statusParagraph then statusParagraph:Destroy() end
 
