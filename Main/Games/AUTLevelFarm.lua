@@ -44,7 +44,6 @@ end
 --<< UI SETUP >>--
 local Window = WindUI:CreateWindow({
     Title = CONFIG.TITLE,
-    Icon = "zap",
     Author = "Cassie",
     Folder = "CassieHub",
     Size = UDim2.fromOffset(580, 460),
@@ -53,9 +52,6 @@ local Window = WindUI:CreateWindow({
     SideBarWidth = 200,
 })
 
-local MainTab = Window:Tab({ Title = "Main", Icon = "zap" })
-local MiscTab = Window:Tab({ Title = "Misc", Icon = "info" })
-local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
 
 --<< UI ELEMENTS >>--
 local currentLevelLabel = MainTab:Paragraph({
