@@ -1,7 +1,9 @@
+-- File: Main/Modules/CommonUtil.lua
+
 local Services = setmetatable({}, {
-    __index = function(self, service)
-        local s = game:GetService(service)
-        rawset(self, service, s)
+    __index = function(self, name)
+        local s = game:GetService(name)
+        rawset(self, name, s)
         return s
     end
 })
