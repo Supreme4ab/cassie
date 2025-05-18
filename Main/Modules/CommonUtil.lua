@@ -1,24 +1,31 @@
-local Services = {}
-setmetatable(Services, {
-    __index = function(_, serviceName)
-        local service = game:GetService(serviceName)
-        rawset(Services, serviceName, service)
-        return service
+local Services = setmetatable({}, {
+    __index = function(self, name)
+        local s = game:GetService(name)
+        rawset(self, name, s)
+        return s
     end
 })
 
-local function GetKnitRemote(service, remoteType, remoteName)
-    return Services.ReplicatedStorage
-        :WaitForChild("ReplicatedModules")
-        :WaitForChild("KnitPackage")
-        :WaitForChild("Knit")
-        :WaitForChild("Services")
-        :WaitForChild(service)
-        :WaitForChild(remoteType)
-        :WaitForChild(remoteName)
+local CommonUtil = {}
+
+function CommonUtil.GetService(name)
+    return Services[name]
 end
 
-return {
-    Services = Services,
-    GetKnitRemote = GetKnitRemote,
-}
+function CommonUtil.WaitForService(name, timeout)
+    return game:WaitForChild(name, timeout or 5)
+end
+
+function CommonUtil.GetLocalPlayer()
+    return Services.Players.LocalPlayer
+end
+
+function CommonUtil.GetKnitRemote(serviceName, remoteType, remoteName)
+    local success, result = pcall(function()
+        local Knit = CommonUtil.GetService("ReplicatedStorage"):WaitForChild("ReplicatedModules", 5):WaitForChild("KnitPackage", 5):WaitForChild("Knit", 5)
+        return Knit.Services[serviceName][remoteType][remoteName]
+    end)
+    return success and result or nil
+end
+
+return CommonUtil
