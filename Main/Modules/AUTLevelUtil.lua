@@ -1,3 +1,4 @@
+-- Cassie Hub | AUT Level Utility Module
 -- File: Main/Modules/AUTLevelUtil.lua
 
 local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
@@ -7,20 +8,20 @@ local ReplicatedStorage = CommonUtil.GetService("ReplicatedStorage")
 
 local AUTLevelUtil = {}
 
--- Whitelisted trait shard types
+-- === CONFIG ===
 AUTLevelUtil.AllowedAbilities = {
-    "ABILITY_8881",
-    "ABILITY_10019",
-    "ABILITY_21",
-    "ABILITY_10",
-    "ABILITY_14"
+    "ABILITY_8881", "ABILITY_10019", "ABILITY_21", "ABILITY_10", "ABILITY_14"
 }
+local maxLevel = 200
+local lastLevel = nil
+local farmThread, levelWatcherThread
+AUTLevelUtil.IsFarming = false
+AUTLevelUtil.IsMonitoring = false
 
--- Parse level from rich text
+-- === HELPERS ===
 function AUTLevelUtil.GetCurrentLevel()
     local label = Players.LocalPlayer.PlayerGui
         .UI.Gameplay.Character.Info:FindFirstChild("AbilityInfo")
-
     if label and label:IsA("TextLabel") then
         local match = string.match(label.Text, "LVL%s+(%d+)")
         return tonumber(match)
@@ -28,13 +29,13 @@ function AUTLevelUtil.GetCurrentLevel()
     return nil
 end
 
--- Build sell table for allowedAbilities (1 shard each)
-function AUTLevelUtil.BuildSellTable()
+function AUTLevelUtil.BuildSellTable(allowed)
+    local allowedAbilities = allowed or AUTLevelUtil.AllowedAbilities
     local sellTable = {}
     local shardFrame = Players.LocalPlayer
         .PlayerGui.UI.Menus["Black Market"].Frame.ShardConvert.Shards
 
-    for _, abilityId in ipairs(AUTLevelUtil.AllowedAbilities) do
+    for _, abilityId in ipairs(allowedAbilities) do
         local frame = shardFrame:FindFirstChild(abilityId)
         if frame and frame:FindFirstChild("Button") then
             local amountLabel = frame.Button:FindFirstChild("Amount")
@@ -44,16 +45,13 @@ function AUTLevelUtil.BuildSellTable()
             end
         end
     end
+
     return sellTable
 end
 
--- Internal threads
-local farmThread, levelWatcherThread
-local maxLevel = 200
-local lastLevel = nil
-
+-- === FARM LOOP ===
 function AUTLevelUtil.RunFarmLoop()
-    if farmThread then return end
+    if farmThread and coroutine.status(farmThread) ~= "dead" then return end
 
     farmThread = task.spawn(function()
         while AUTLevelUtil.IsFarming do
@@ -78,8 +76,9 @@ function AUTLevelUtil.RunFarmLoop()
     end)
 end
 
-function AUTLevelUtil.RunLevelWatcher()
-    if levelWatcherThread then return end
+-- === LEVEL WATCHER ===
+function AUTLevelUtil.RunLevelWatcher(onAscend, onMax)
+    if levelWatcherThread and coroutine.status(levelWatcherThread) ~= "dead" then return end
 
     levelWatcherThread = task.spawn(function()
         while AUTLevelUtil.IsMonitoring do
@@ -91,14 +90,13 @@ function AUTLevelUtil.RunLevelWatcher()
             if level == maxLevel then
                 if AUTLevelUtil.IsFarming then
                     AUTLevelUtil.IsFarming = false
-                    print("🟨 Max level reached. Halting farm.")
+                    if onMax then onMax() end
                 end
-                print("Player has reached maximum level.")
                 task.wait(5)
             elseif level and level < maxLevel then
                 if not AUTLevelUtil.IsFarming then
-                    print("🟩 Ascended detected. Resuming farm.")
                     AUTLevelUtil.IsFarming = true
+                    if onAscend then onAscend() end
                     AUTLevelUtil.RunFarmLoop()
                 end
                 task.wait(1)
@@ -110,8 +108,11 @@ function AUTLevelUtil.RunLevelWatcher()
     end)
 end
 
--- State flags
-AUTLevelUtil.IsFarming = false
-AUTLevelUtil.IsMonitoring = false
+function AUTLevelUtil.Reset()
+    AUTLevelUtil.IsFarming = false
+    AUTLevelUtil.IsMonitoring = false
+    farmThread = nil
+    levelWatcherThread = nil
+end
 
 return AUTLevelUtil
