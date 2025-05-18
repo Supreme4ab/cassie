@@ -1,21 +1,20 @@
 local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
 
 local Players = CommonUtil.GetService("Players")
-local ReplicatedStorage = CommonUtil.GetService("ReplicatedStorage")
-
 local AUTLevelUtil = {}
 
--- === CONFIG ===
 AUTLevelUtil.AllowedAbilities = {
     "ABILITY_8881", "ABILITY_10019", "ABILITY_21", "ABILITY_10", "ABILITY_14"
 }
+
 local maxLevel = 200
 local lastLevel = nil
 local farmThread, levelWatcherThread
 AUTLevelUtil.IsFarming = false
 AUTLevelUtil.IsMonitoring = false
+AUTLevelUtil.ShardsPerAbility = 5
+AUTLevelUtil.Debug = false
 
--- === HELPERS ===
 function AUTLevelUtil.GetCurrentLevel()
     local label = Players.LocalPlayer.PlayerGui
         .UI.Gameplay.Character.Info:FindFirstChild("AbilityInfo")
@@ -26,9 +25,11 @@ function AUTLevelUtil.GetCurrentLevel()
     return nil
 end
 
-function AUTLevelUtil.BuildSellTable(allowed)
+function AUTLevelUtil.BuildSellTable(allowed, shardsPerAbility)
     local allowedAbilities = allowed or AUTLevelUtil.AllowedAbilities
+    local maxPerAbility = math.clamp(shardsPerAbility or 1, 1, 15)
     local sellTable = {}
+
     local shardFrame = Players.LocalPlayer
         .PlayerGui.UI.Menus["Black Market"].Frame.ShardConvert.Shards
 
@@ -38,8 +39,7 @@ function AUTLevelUtil.BuildSellTable(allowed)
             local amountLabel = frame.Button:FindFirstChild("Amount")
             local amount = tonumber(amountLabel and amountLabel.Text)
             if amount and amount > 0 then
-                -- Sell up to 5, but not more than we have
-                sellTable[abilityId] = math.clamp(amount, 1, 5)
+                sellTable[abilityId] = math.clamp(amount, 1, maxPerAbility)
             end
         end
     end
@@ -47,34 +47,38 @@ function AUTLevelUtil.BuildSellTable(allowed)
     return sellTable
 end
 
--- === FARM LOOP ===
+function AUTLevelUtil.Log(message)
+    if AUTLevelUtil.Debug then
+        print("[Cassie AUT]:", message)
+    end
+end
+
 function AUTLevelUtil.RunFarmLoop()
     if farmThread and coroutine.status(farmThread) ~= "dead" then return end
+
+    local RollBanner = CommonUtil.GetKnitRemote("ShopService", "RF", "RollBanner")
+    local ConsumeShards = CommonUtil.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP")
 
     farmThread = task.spawn(function()
         while AUTLevelUtil.IsFarming do
             pcall(function()
-                ReplicatedStorage.ReplicatedModules
-                    .KnitPackage.Knit.Services.ShopService.RF.RollBanner
-                    :InvokeServer(1, "UShards", 10)
+                RollBanner:InvokeServer(1, "UShards", 10)
             end)
 
-            local sellTable = AUTLevelUtil.BuildSellTable(nil, AUTLevelUtil.ShardsPerAbility or 5)
+            local sellTable = AUTLevelUtil.BuildSellTable(nil, AUTLevelUtil.ShardsPerAbility)
             if next(sellTable) then
                 pcall(function()
-                    ReplicatedStorage.ReplicatedModules
-                        .KnitPackage.Knit.Services.LevelService.RF.ConsumeShardsForXP
-                        :InvokeServer(sellTable)
+                    ConsumeShards:InvokeServer(sellTable)
                 end)
             end
 
+            if not AUTLevelUtil.IsFarming then break end
             task.wait(0.1)
         end
         farmThread = nil
     end)
 end
 
--- === LEVEL WATCHER ===
 function AUTLevelUtil.RunLevelWatcher(onAscend, onMax)
     if levelWatcherThread and coroutine.status(levelWatcherThread) ~= "dead" then return end
 
