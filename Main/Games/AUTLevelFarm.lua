@@ -152,9 +152,13 @@ task.spawn(function()
     while true do
         local level = ability:GetAttribute("AbilityLevel")
         if level then
-            if currentLevelLabel and currentLevelLabel.SetDesc then currentLevelLabel:SetDesc("Level: " .. tostring(level) end)
+if currentLevelLabel and currentLevelLabel.SetDesc then
+    currentLevelLabel:SetDesc("Level: " .. tostring(level))
+end
         else
-            if currentLevelLabel and currentLevelLabel.SetDesc then currentLevelLabel:SetDesc("Level: Unknown") end
+if currentLevelLabel and currentLevelLabel.SetDesc then
+    currentLevelLabel:SetDesc("Level: Unknown")
+end
         end
         task.wait(CONFIG.UPDATE_INTERVAL)
     end
@@ -209,8 +213,12 @@ local ascensionPara = MiscTab:Paragraph({
 
 task.spawn(function()
     while true do
-        if standNamePara and standNamePara.SetDesc then standNamePara:SetDesc(AUTLevelUtil.GetAbilityName() end)
-        if ascensionPara and ascensionPara.SetDesc then ascensionPara:SetDesc(tostring(AUTLevelUtil.GetAscensionRank() end))
+if standNamePara and standNamePara.SetDesc then
+    standNamePara:SetDesc(AUTLevelUtil.GetAbilityName())
+end
+if ascensionPara and ascensionPara.SetDesc then
+    ascensionPara:SetDesc(tostring(AUTLevelUtil.GetAscensionRank()))
+end
         task.wait(2)
     end
 end)
