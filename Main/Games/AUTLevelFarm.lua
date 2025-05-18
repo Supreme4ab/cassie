@@ -1,4 +1,4 @@
---<< SERVICES / MODULES >>--
+--<< SERVICES & MODULES >>--
 local HttpService = game:GetService("HttpService")
 
 local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
@@ -196,5 +196,6 @@ SettingsTab:Keybind({
     end
 })
 
+--<< WELCOME >>--
 showDialog("Cassie Hub", "AUT Level Farm Ready!")
 Window:SelectTab(1)
