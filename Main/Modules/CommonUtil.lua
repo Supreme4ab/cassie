@@ -1,6 +1,3 @@
--- CommonUtil.lua
--- Dynamically fetch and cache Roblox services
-
 local Services = setmetatable({}, {
     __index = function(_, serviceName)
         local service = game:GetService(serviceName)
