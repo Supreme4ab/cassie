@@ -20,4 +20,9 @@ function CommonUtil.GetLocalPlayer()
     return Services.Players.LocalPlayer
 end
 
+function CommonUtil.GetKnitRemote(serviceName, remoteType, remoteName)
+    local Knit = CommonUtil.GetService("ReplicatedStorage"):WaitForChild("ReplicatedModules"):WaitForChild("KnitPackage"):WaitForChild("Knit")
+    return Knit.Services[serviceName][remoteType][remoteName]
+end
+
 return CommonUtil
