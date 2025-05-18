@@ -89,7 +89,7 @@ local levelSection = MainTab:Section({ Title = "Auto-Level" })
 local currentLevelLabel = MainTab:Paragraph({
     Title = "Current Level",
     Desc = "Waiting...",
-    Color = "#484848"  -- Same gray as WindUI toggle
+    Color = "Grey"  -- Same gray as WindUI toggle
 })
 
 local statusElement = nil
@@ -199,13 +199,13 @@ MiscTab:Section({ Title = "Stand Info" })
 local standNamePara = MiscTab:Paragraph({
     Title = "Stand",
     Desc = "Loading...",
-    Color = "#484848"
+    Color = "Grey"
 })
 
 local ascensionPara = MiscTab:Paragraph({
     Title = "Ascensions",
     Desc = "Loading...",
-    Color = "#484848"
+    Color = "Grey"
 })
 
 task.spawn(function()
