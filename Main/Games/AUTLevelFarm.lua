@@ -1,11 +1,8 @@
---<< SERVICES & MODULES >>--
-local HttpService = game:GetService("HttpService")
-
 local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
 local AUTLevelUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/AUTLevelUtil.lua"))()
 local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
 
---<< CONFIGURATION >>--
+-- Config
 local CONFIG = {
     TITLE = "Cassie Hub | AUT | Level Farming",
     DEFAULT_KEY = "RightControl",
@@ -13,27 +10,10 @@ local CONFIG = {
         MIN = 1,
         MAX = 15,
         DEFAULT = 5
-    },
-    CONFIG_PATH = "CassieHub_AUTLevel.fileformat",
-    UPDATE_INTERVAL = 1
+    }
 }
 
---<< LOAD / SAVE SHARD CONFIG >>--
-local function saveShardConfig(value)
-    if writefile then
-        writefile(CONFIG.CONFIG_PATH, HttpService:JSONEncode({Shards = value}))
-    end
-end
-
-local function loadShardConfig()
-    if isfile and isfile(CONFIG.CONFIG_PATH) then
-        local data = HttpService:JSONDecode(readfile(CONFIG.CONFIG_PATH))
-        return data.Shards or CONFIG.SHARD_LIMIT.DEFAULT
-    end
-    return CONFIG.SHARD_LIMIT.DEFAULT
-end
-
---<< UI SETUP >>--
+-- Window
 local Window = WindUI:CreateWindow({
     Title = CONFIG.TITLE,
     Icon = "zap",
@@ -45,10 +25,11 @@ local Window = WindUI:CreateWindow({
     SideBarWidth = 200,
 })
 
+-- Tabs
 local MainTab = Window:Tab({ Title = "Main", Icon = "zap" })
 local SettingsTab = Window:Tab({ Title = "Settings", Icon = "settings" })
 
---<< UI ELEMENTS >>--
+-- Paragraphs
 local currentLevelLabel = MainTab:Paragraph({
     Title = "Current Level",
     Desc = "Waiting...",
@@ -56,13 +37,9 @@ local currentLevelLabel = MainTab:Paragraph({
 })
 
 local statusParagraph
-local lastStatusMode
 
---<< STATUS LOGIC >>--
+-- Rebuild status paragraph to force color and text updates
 local function updateStatus(mode)
-    if lastStatusMode == mode then return end
-    lastStatusMode = mode
-
     if statusParagraph then statusParagraph:Destroy() end
 
     local desc, color = "🔴 Disabled", "Red"
@@ -79,7 +56,7 @@ local function updateStatus(mode)
     })
 end
 
---<< DIALOG HELPER >>--
+-- Dialog Helper
 local function showDialog(title, content)
     Window:Dialog({
         Title = title,
@@ -90,7 +67,7 @@ local function showDialog(title, content)
     })
 end
 
---<< FARMING LOGIC >>--
+-- Start Farm
 local function startFarming()
     updateStatus("farming")
     AUTLevelUtil.IsFarming = true
@@ -108,7 +85,7 @@ local function startFarming()
     )
 end
 
---<< LEVEL MONITORING TASK >>--
+-- Live Level Tracking
 task.spawn(function()
     while true do
         local level = AUTLevelUtil.GetCurrentLevel()
@@ -117,29 +94,26 @@ task.spawn(function()
         else
             currentLevelLabel:SetDesc("Level: Unknown")
         end
-        task.wait(CONFIG.UPDATE_INTERVAL)
+        task.wait(1)
     end
 end)
 
---<< SHARDS SLIDER >>--
-local loadedShardValue = loadShardConfig()
-
+-- Shards Slider
 MainTab:Slider({
     Title = "Shards Per Ability",
     Step = 1,
     Value = {
         Min = CONFIG.SHARD_LIMIT.MIN,
         Max = CONFIG.SHARD_LIMIT.MAX,
-        Default = loadedShardValue
+        Default = CONFIG.SHARD_LIMIT.DEFAULT
     },
     Callback = function(value)
         AUTLevelUtil.ShardsPerAbility = value
-        saveShardConfig(value)
     end
 })
-AUTLevelUtil.ShardsPerAbility = loadedShardValue
+AUTLevelUtil.ShardsPerAbility = CONFIG.SHARD_LIMIT.DEFAULT
 
---<< TOGGLE: FARM >>--
+-- Autofarm Toggle
 local autoToggleDebounce = false
 MainTab:Toggle({
     Title = "Level Autofarm",
@@ -161,7 +135,7 @@ MainTab:Toggle({
     end
 })
 
---<< SETTINGS TAB OPTIONS >>--
+-- Transparency Toggle
 local transparencyState = false
 SettingsTab:Button({
     Title = "Toggle Transparency",
@@ -172,6 +146,7 @@ SettingsTab:Button({
     end
 })
 
+-- Theme Switchers
 SettingsTab:Button({
     Title = "Dark Theme",
     Desc = "Switch to Dark Theme",
@@ -187,6 +162,7 @@ SettingsTab:Button({
     end
 })
 
+-- Keybind Config
 SettingsTab:Keybind({
     Title = "Toggle UI Keybind",
     Desc = "Bind a key to show/hide UI",
@@ -196,6 +172,7 @@ SettingsTab:Keybind({
     end
 })
 
---<< WELCOME >>--
+-- Initial Welcome Dialog
 showDialog("Cassie Hub", "AUT Level Farm Ready!")
+
 Window:SelectTab(1)
