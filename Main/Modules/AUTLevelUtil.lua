@@ -38,7 +38,8 @@ function AUTLevelUtil.BuildSellTable(allowed)
             local amountLabel = frame.Button:FindFirstChild("Amount")
             local amount = tonumber(amountLabel and amountLabel.Text)
             if amount and amount > 0 then
-                sellTable[abilityId] = 1
+                -- Sell up to 5, but not more than we have
+                sellTable[abilityId] = math.clamp(amount, 1, 5)
             end
         end
     end
