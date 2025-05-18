@@ -63,17 +63,22 @@ function AUTLevelUtil:RunFarmLoop()
     end)
 end
 
+print("[Watcher] Running...")
+
 function AUTLevelUtil:RunLevelWatcher(onAscend, onMaxLevel)
     task.spawn(function()
         while AUTLevelUtil.IsMonitoring do
             local level = AUTLevelUtil:GetCurrentLevel()
+            print("[Watcher] Current Level:", level)
             if level == 200 then
+                print("[Watcher] Max level reached, triggering onMaxLevel")
                 AUTLevelUtil.IsFarming = false
                 onMaxLevel()
                 repeat
                     task.wait(1)
                     level = AUTLevelUtil:GetCurrentLevel()
                 until level and level < 200
+                print("[Watcher] Ascension detected, triggering onAscend")
                 AUTLevelUtil.IsFarming = true
                 onAscend()
             end
