@@ -1,61 +1,58 @@
 local CommonUtil = loadstring(game:HttpGet("https://raw.githubusercontent.com/Supreme4ab/cassie/main/Main/Modules/CommonUtil.lua"))()
-local ReplicatedStorage = CommonUtil.GetService("ReplicatedStorage")
-local Players = CommonUtil.GetService("Players")
-local LocalPlayer = CommonUtil.GetLocalPlayer()
+local Services = CommonUtil.Services
 
-local Knit = require(ReplicatedStorage:WaitForChild("ReplicatedModules"):WaitForChild("KnitPackage"):WaitForChild("Knit"))
-local ShopService = Knit.GetService("ShopService")
-local LevelService = Knit.GetService("LevelService")
+local AUTLevelUtil = {}
 
-local AUTLevelUtil = {
-    IsFarming = false,
-    IsMonitoring = false,
-    ShardsPerAbility = 5
-}
+AUTLevelUtil.ShardsPerAbility = 5
+AUTLevelUtil.IsFarming = false
+AUTLevelUtil.IsMonitoring = false
 
 local allowedAbilities = {
     "ABILITY_8881", "ABILITY_10019", "ABILITY_21", "ABILITY_10", "ABILITY_14"
 }
 
-function AUTLevelUtil:GetCurrentLevel()
-    local abilityInfo = LocalPlayer.PlayerGui.UI.Gameplay.Character.Info:FindFirstChild("AbilityInfo")
-    if not abilityInfo or not abilityInfo:IsA("TextLabel") then return nil end
+-- Parses level number from text
+function AUTLevelUtil.GetCurrentLevel()
+    local label = Services.Players.LocalPlayer
+        .PlayerGui:WaitForChild("UI")
+        .Gameplay:WaitForChild("Character")
+        .Info:WaitForChild("AbilityInfo")
 
-    local level = tonumber(abilityInfo.Text:match("LVL (%d+)"))
-    return level
+    local text = label.Text:match("LVL%s+(%d+)")
+    return tonumber(text)
 end
 
-function AUTLevelUtil:BuildSellTable()
-    local shardFrame = LocalPlayer.PlayerGui.UI.Menus["Black Market"].Frame.ShardConvert.Shards
-    local shardTable = {}
+-- Builds a sell dictionary based on player UI
+function AUTLevelUtil.BuildShardSellData()
+    local shardPanel = Services.Players.LocalPlayer
+        .PlayerGui.UI.Menus["Black Market"]
+        .Frame.ShardConvert.Shards
 
+    local data = {}
     for _, ability in ipairs(allowedAbilities) do
-        local button = shardFrame:FindFirstChild(ability)
+        local button = shardPanel:FindFirstChild(ability)
         if button then
-            local amountLabel = button:FindFirstChild("Amount")
-            if amountLabel and tonumber(amountLabel.Text) and tonumber(amountLabel.Text) >= 1 then
-                shardTable[ability] = math.clamp(AUTLevelUtil.ShardsPerAbility, 1, tonumber(amountLabel.Text))
+            local amt = tonumber(button.Button.Amount.Text)
+            if amt and amt >= AUTLevelUtil.ShardsPerAbility then
+                data[ability] = AUTLevelUtil.ShardsPerAbility
             end
         end
     end
 
-    return shardTable
+    return next(data) and data or nil
 end
 
-function AUTLevelUtil:RunFarmLoop()
+-- Farming loop
+function AUTLevelUtil.RunFarmLoop()
     task.spawn(function()
         while AUTLevelUtil.IsFarming do
-            local args = {
-                [1] = 1,
-                [2] = "UShards",
-                [3] = 10
-            }
+            local rollArgs = { 1, "UShards", 10 }
+            local sellData = AUTLevelUtil.BuildShardSellData()
 
-            ShopService.RF.RollBanner:InvokeServer(unpack(args))
+            CommonUtil.GetKnitRemote("ShopService", "RF", "RollBanner"):InvokeServer(unpack(rollArgs))
 
-            local shardTable = AUTLevelUtil:BuildSellTable()
-            if next(shardTable) then
-                LevelService.RF.ConsumeShardsForXP:InvokeServer({shardTable})
+            if sellData then
+                CommonUtil.GetKnitRemote("LevelService", "RF", "ConsumeShardsForXP"):InvokeServer({ sellData })
             end
 
             task.wait(0.1)
@@ -63,31 +60,28 @@ function AUTLevelUtil:RunFarmLoop()
     end)
 end
 
-print("[Watcher] Running...")
-
-function AUTLevelUtil:RunLevelWatcher(onAscend, onMaxLevel)
+-- Watcher for auto-stopping at level 200 and resuming on ascension
+function AUTLevelUtil.RunLevelWatcher(onAscend, onMaxLevel)
     task.spawn(function()
+        local wasMax = false
+
         while AUTLevelUtil.IsMonitoring do
-            local level = AUTLevelUtil:GetCurrentLevel()
-            print("[Watcher] Current Level:", level)
-            if level == 200 then
-                print("[Watcher] Max level reached, triggering onMaxLevel")
+            local level = AUTLevelUtil.GetCurrentLevel()
+            if level == 200 and not wasMax then
+                wasMax = true
                 AUTLevelUtil.IsFarming = false
-                onMaxLevel()
-                repeat
-                    task.wait(1)
-                    level = AUTLevelUtil:GetCurrentLevel()
-                until level and level < 200
-                print("[Watcher] Ascension detected, triggering onAscend")
+                if onMaxLevel then onMaxLevel() end
+            elseif wasMax and level and level < 200 then
+                wasMax = false
                 AUTLevelUtil.IsFarming = true
-                onAscend()
+                if onAscend then onAscend() end
             end
             task.wait(1)
         end
     end)
 end
 
-function AUTLevelUtil:Reset()
+function AUTLevelUtil.Reset()
     AUTLevelUtil.IsFarming = false
     AUTLevelUtil.IsMonitoring = false
 end
