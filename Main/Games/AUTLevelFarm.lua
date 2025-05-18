@@ -96,20 +96,27 @@ local function showDialog(title, content)
     })
 end
 
---<< FARMING LOGIC >>--
+--<< FARM CONTROL LOGIC >>--
 local function startFarming()
-    updateStatus("farming")
-    AUTLevelUtil.IsFarming = true
+    AUTLevelUtil.Reset()
     AUTLevelUtil.IsMonitoring = true
+    AUTLevelUtil.IsFarming = true
+
+    updateStatus("farming")
     AUTLevelUtil.RunFarmLoop()
+
     AUTLevelUtil.RunLevelWatcher(
         function()
-            showDialog("Ascension Detected", "Player ascended — resuming farm!")
-            updateStatus("farming")
+            if AUTLevelUtil.IsFarming then
+                showDialog("Ascension Detected", "Player ascended — resuming farm!")
+                updateStatus("farming")
+            end
         end,
         function()
-            showDialog("Max Level", "Player reached level 200 — farming paused.")
-            updateStatus("idle")
+            if AUTLevelUtil.IsMonitoring then
+                showDialog("Max Level", "Player reached level 200 — farming paused.")
+                updateStatus("idle")
+            end
         end
     )
 end
@@ -146,24 +153,17 @@ MainTab:Slider({
 AUTLevelUtil.ShardsPerAbility = loadedShardValue
 
 --<< TOGGLE: FARM >>--
-local autoToggleDebounce = false
 MainTab:Toggle({
     Title = "Level Autofarm",
     Desc = "Automatically farm and sell trait shards for XP",
     Default = false,
     Callback = function(enabled)
-        if autoToggleDebounce then return end
-        autoToggleDebounce = true
-
         if enabled then
             startFarming()
         else
-            updateStatus("disabled")
             AUTLevelUtil.Reset()
+            updateStatus("disabled")
         end
-
-        task.wait(0.25)
-        autoToggleDebounce = false
     end
 })
 
